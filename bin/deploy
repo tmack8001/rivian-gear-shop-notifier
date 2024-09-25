@@ -1,0 +1,23 @@
+#!/bin/bash
+
+FUNCTIONS=("scrapper" "notifier")
+
+ZIP_FILE_SUFFIX="function.zip"
+
+# Ensure the script exits on any error
+set -e
+
+# Check if the ZIP file(s) exist
+for FUNCTION in "${FUNCTIONS[@]}"; do
+    ZIP_FILE="${FUNCTION}_${ZIP_FILE_SUFFIX}"
+    if [ ! -f "$ZIP_FILE" ]; then
+        echo "Error: ${ZIP_FILE} does not exist. Building source"
+        ./bin/build
+        break
+    fi
+done
+
+sam build
+sam deploy --profile personal
+
+echo "Deployment completed successfully!"

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+./bin/build
+
+sam local invoke RivianGearShopScrapper --docker-network gear-shop-scrapper-network
+
+sam local invoke GearShopInventoryStreamNotifier --event ./fixtures/dynamodb_event.json

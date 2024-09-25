@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  RivianGearShopScrapper:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: main
+      Runtime: provided.al2
+      CodeUri: ./scrapper_function.zip
+      Timeout: 10
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref GearShopInventoryTable
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref GearShopInventoryTable
+      Events:
+        ScheduledEvent:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: rate(6 hours)
+            ScheduleExpressionTimezone: UTC
+
+  GearShopInventoryStreamNotifier:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: main
+      Runtime: provided.al2
+      CodeUri: ./notifier_function.zip
+      Timeout: 30
+      Events:
+        DynamoDBStreamEvent:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt GearShopInventoryTable.StreamArn
+            StartingPosition: LATEST
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref GearShopNotificationTopic
+      Policies:
+        - AmazonDynamoDBReadOnlyAccess
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt GearShopNotificationTopic.TopicName
+
+  GearShopInventoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: GearShopInventoryTable
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      AttributeDefinitions:
+        - AttributeName: Id
+          AttributeType: S  # String type for ProductName
+        - AttributeName: DateFirstSeen
+          AttributeType: S  # String type for date
+      KeySchema:
+        - AttributeName: Id
+          KeyType: HASH  # Partition key
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      GlobalSecondaryIndexes:
+        - IndexName: DateFirstSeenIndex
+          KeySchema:
+            - AttributeName: DateFirstSeen
+              KeyType: HASH  # Partition key for the GSI
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+  
+  GearShopNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: GearShopNotificationTopic
+      Subscription:
+        - Protocol: email
+          Endpoint: user@domain.com
+
+    

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+SRC_DIR="src"
+export ENVIRONMENT="local"
+export DYNAMODB_TABLE_NAME="GearShopInventoryTable"
+
+# Run the Go application
+go run $SRC_DIR/main.go

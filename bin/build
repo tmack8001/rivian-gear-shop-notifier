@@ -1,0 +1,42 @@
+#!/bin/bash
+
+OUTPUT_BINARY="bootstrap"
+ZIP_FILE_SUFFIX="function.zip"
+SRC_DIR="src"
+
+FUNCTIONS=("scrapper" "notifier")
+
+# Ensure the script exits on any error
+set -e
+
+# Create a clean build directory
+if [ -d "build" ]; then
+    rm -rf build
+fi
+mkdir build
+
+
+# Loop through each function to build and create output files
+for FUNCTION in "${FUNCTIONS[@]}"; do
+    echo "Building Lambda function: $FUNCTION..."
+
+    GOOS=linux GOARCH=amd64 go build -o build/$FUNCTION/$OUTPUT_BINARY "$SRC_DIR/$FUNCTION/main.go"
+
+    # Create a deployment ZIP file
+    echo "Creating deployment ZIP..."
+    cd build
+    ZIP_FILE="${FUNCTION}_${ZIP_FILE_SUFFIX}"
+    zip -j $ZIP_FILE ./$FUNCTION/$OUTPUT_BINARY
+
+    # Move ZIP file back to the root directory
+    mv $ZIP_FILE ../
+    cd ..
+done
+
+sam build
+
+# Cleanup
+# rm -rf build
+
+# Success message
+echo "Build completed successfully!"

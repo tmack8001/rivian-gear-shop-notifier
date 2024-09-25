@@ -1,0 +1,13 @@
+version = 0.1
+[default]
+[default.global]
+[default.global.parameters]
+stack_name = "rivian-gear-guard-scrapper"
+[default.deploy.parameters]
+resolve_s3 = true
+s3_prefix = "rivian-gear-guard-scrapper"
+region = "us-west-2"
+profile = "personal"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []

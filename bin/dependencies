@@ -1,0 +1,16 @@
+#!/bin/bash
+
+docker network create gear-shop-scrapper-network
+
+# setup and create dynamodb table
+docker run --detach --name gear-shop-scrapper-db --network gear-shop-scrapper-network -p 8000:8000 amazon/dynamodb-local
+
+aws dynamodb create-table --table-name GearShopInventoryTable \
+   --attribute-definitions AttributeName=Id,AttributeType=S \
+   --key-schema AttributeName=Id,KeyType=HASH \
+   --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+   --endpoint-url http://localhost:8000
+
+
+# docker stop gear-shop-scrapper-db
+# docker rm gear-shop-scrapper-db

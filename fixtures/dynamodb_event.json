@@ -1,0 +1,36 @@
+{
+    "Records": [
+        {
+            "eventID": "1",
+            "eventName": "INSERT",
+            "eventVersion": "1.0",
+            "eventSource": "aws:dynamodb",
+            "awsRegion": "us-west-2",
+            "dynamodb": {
+                "Keys": {
+                    "Id": {
+                        "S": "gear-guard-halloween-plush"
+                    }
+                },
+                "NewImage": {
+                    "Id": {
+                        "S": "gear-guard-halloween-plush"
+                    },
+                    "Name": {
+                        "S": "Gear Guard Halloween Plush"
+                    },
+                    "Price": {
+                        "S": "$45.00"
+                    },
+                    "GearShopUrl": {
+                        "S": "/p/gear-guard-halloween-plush"
+                    }
+                },
+                "StreamViewType": "NEW_IMAGE",
+                "SequenceNumber": "111",
+                "SizeBytes": 26
+            },
+            "eventSourceARN": "arn:aws:dynamodb:us-west-2:123456789012:table/GearShopInventoryTable/stream/2021-12-01T00:00:00.000"
+        }
+    ]
+}
