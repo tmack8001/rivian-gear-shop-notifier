@@ -17,7 +17,12 @@ for FUNCTION in "${FUNCTIONS[@]}"; do
     fi
 done
 
+# load secrets that are stored in .env
+set -o allexport; source .env; set +o allexport
+
 sam build
-sam deploy --profile personal
+sam deploy \
+    --profile personal \
+    --parameter-overrides SourceEmailParameter="$SOURCE_EMAIL" BCCAddressesParameter="$BCC_ADDRESSES" ReplyToAddressesParameter="$REPLY_TO_ADDRESSES" CustomDomainEmailIdentity="$EMAIL_IDENTITY"
 
 echo "Deployment completed successfully!"

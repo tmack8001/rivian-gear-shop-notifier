@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sns"
+	"github.com/aws/aws-sdk-go/service/ses"
 )
 
 type Product struct {
@@ -23,8 +24,7 @@ type Response struct {
 
 const GEAR_SHOP_HOSTNAME = "https://rivian.com"
 
-var snsClient *sns.SNS
-var topicArn string
+var sesClient *ses.SES
 
 func init() {
 	var aws_session *session.Session
@@ -36,8 +36,7 @@ func init() {
 	} else {
 		aws_session = session.Must(session.NewSession())
 	}
-	snsClient = sns.New(aws_session)
-	topicArn = os.Getenv("SNS_TOPIC_ARN")
+	sesClient = ses.New(aws_session)
 }
 
 // Handler function for AWS Lambda
@@ -76,17 +75,35 @@ func Handler(ctx context.Context, event events.DynamoDBEvent) (Response, error) 
 				break
 			}
 
-			// Publish message to SNS
-			result, err := snsClient.Publish(&sns.PublishInput{
-				Message:  aws.String(message),
-				TopicArn: aws.String(topicArn),
-				Subject:  aws.String("[Rivian GearShop] New Product Alert"),
-			})
+			sourceEmail := fmt.Sprintf("Rivian GearShop Notifier <%s>", os.Getenv("SOURCE_EMAIL"))
+			sourceArn := os.Getenv("SOURCE_ARN")
+			replyToAddresses := strings.Split(os.Getenv("REPLY_TO_ADDRESSES"), ",")
+			bccAddresses := strings.Split(os.Getenv("BCC_ADDRESSES"), ",")
+
+			sendEmailInput := &ses.SendEmailInput{
+				Source:           aws.String(sourceEmail),
+				SourceArn:        aws.String(sourceArn),
+				ReplyToAddresses: aws.StringSlice(replyToAddresses),
+				Destination: &ses.Destination{
+					BccAddresses: aws.StringSlice(bccAddresses),
+				},
+				Message: &ses.Message{
+					Subject: &ses.Content{
+						Data: aws.String("[Rivian GearShop] New Product Alert"),
+					},
+					Body: &ses.Body{
+						Text: &ses.Content{
+							Data: aws.String(message),
+						},
+					},
+				},
+			}
+			result, err := sesClient.SendEmail(sendEmailInput)
 			if err != nil {
-				return Response{}, fmt.Errorf("failed to publish SNS message: %v", err)
+				return Response{}, fmt.Errorf("failed ses:SendEmailInput request: %v", err)
 			}
 
-			fmt.Printf("Successfully published SNS message: %s with MessageID: %s", message, *result.MessageId)
+			fmt.Printf("Successfully sent SES email: %s with MessageID: %s", message, *result.MessageId)
 		}
 	}
 

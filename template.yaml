@@ -36,11 +36,24 @@ Resources:
             StartingPosition: LATEST
       Environment:
         Variables:
-          SNS_TOPIC_ARN: !Ref GearShopNotificationTopic
+          SOURCE_ARN: !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/${CustomDomainEmailIdentity}"
+          SOURCE_EMAIL: !Ref SourceEmailParameter
+          REPLY_TO_ADDRESSES: !Ref ReplyToAddressesParameter
+          BCC_ADDRESSES: !Ref BCCAddressesParameter
       Policies:
         - AmazonDynamoDBReadOnlyAccess
-        - SNSPublishMessagePolicy:
-            TopicName: !GetAtt GearShopNotificationTopic.TopicName
+        - SESCrudPolicy:
+            IdentityName: !Ref SourceEmailParameter
+        - Version: '2012-10-17'
+          Statement:
+            Effect: Allow
+            Action:
+              - 'ses:SendEmail'
+              - 'ses:SendRawEmail'
+            Resource: "*"
+            Condition:
+              StringEquals:
+                ses:FromAddress: !Ref SourceEmailParameter
 
   GearShopInventoryTable:
     Type: AWS::DynamoDB::Table
@@ -69,13 +82,33 @@ Resources:
           ProvisionedThroughput:
             ReadCapacityUnits: 5
             WriteCapacityUnits: 5
-  
-  GearShopNotificationTopic:
-    Type: AWS::SNS::Topic
-    Properties:
-      TopicName: GearShopNotificationTopic
-      Subscription:
-        - Protocol: email
-          Endpoint: user@domain.com
 
-    
+  # SESDomainIdentity:
+  #   Type: AWS::SES::EmailIdentity
+  #   Properties:
+  #     EmailIdentity: !Ref CustomDomainEmailIdentity
+
+  # SESSourceEmailIdentity:
+  #   Type: AWS::SES::EmailIdentity
+  #   Properties:
+  #     EmailIdentity: !Ref SourceEmailParameter
+
+Parameters:
+  CustomDomainEmailIdentity:
+    Type: String
+    Description: "The verified custom domain trusted identity to use with SES"
+  SourceEmailParameter:
+    Type: String
+    Description: "The verified email address for sending emails from with SES."
+  ReplyToAddressesParameter:
+    Type: String
+    Description: "Comma-separated list of reply-to addresses to use ."
+  BCCAddressesParameter:
+    Type: String
+    Description: "Comma-separated list of BCC email addresses to send new gear notification emails to."
+
+Outputs:
+  RivianGearShopScrapperArn:
+    Value: !GetAtt RivianGearShopScrapper.Arn
+  GearShopInventoryStreamNotifierArn:
+    Value: !GetAtt GearShopInventoryStreamNotifier.Arn
