@@ -40,6 +40,7 @@ Resources:
           SOURCE_EMAIL: !Ref SourceEmailParameter
           REPLY_TO_ADDRESSES: !Ref ReplyToAddressesParameter
           BCC_ADDRESSES: !Ref BCCAddressesParameter
+          REFERRAL_CODE: !Ref RivianReferralCode
       Policies:
         - AmazonDynamoDBReadOnlyAccess
         - SESCrudPolicy:
@@ -102,10 +103,13 @@ Parameters:
     Description: "The verified email address for sending emails from with SES."
   ReplyToAddressesParameter:
     Type: String
-    Description: "Comma-separated list of reply-to addresses to use ."
+    Description: "Comma-separated list of reply-to addresses to use."
   BCCAddressesParameter:
     Type: String
     Description: "Comma-separated list of BCC email addresses to send new gear notification emails to."
+  RivianReferralCode:
+    Type: String
+    Description: "Rivian owner referral code."
 
 Outputs:
   RivianGearShopScrapperArn:

@@ -23,6 +23,6 @@ set -o allexport; source .env; set +o allexport
 sam build
 sam deploy \
     --profile personal \
-    --parameter-overrides SourceEmailParameter="$SOURCE_EMAIL" BCCAddressesParameter="$BCC_ADDRESSES" ReplyToAddressesParameter="$REPLY_TO_ADDRESSES" CustomDomainEmailIdentity="$EMAIL_IDENTITY"
+    --parameter-overrides SourceEmailParameter="$SOURCE_EMAIL" BCCAddressesParameter="$BCC_ADDRESSES" ReplyToAddressesParameter="$REPLY_TO_ADDRESSES" CustomDomainEmailIdentity="$EMAIL_IDENTITY" RivianReferralCode="$REFERRAL_CODE"
 
 echo "Deployment completed successfully!"
