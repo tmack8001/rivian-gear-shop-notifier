@@ -18,11 +18,12 @@ import (
 
 // ProductInfo represents the structure of the product information we want to extract.
 type ProductInfo struct {
-	Id    string `json:"id"`
-	Name  string `json:"name"`
-	SKU   string `json:"sku"`
-	Price string `json:"price"`
-	URL   string `json:"url"`
+	Id     string   `json:"id"`
+	Name   string   `json:"name"`
+	SKU    string   `json:"sku"`
+	Price  string   `json:"price"`
+	URL    string   `json:"url"`
+	Images []string `json:"images"`
 }
 
 type Response struct {
@@ -104,6 +105,33 @@ func extractSku(e *colly.HTMLElement) string {
 	return sku
 }
 
+// Extract images from the HTML content img element as a child of div.cld-image
+func extractImages(e *colly.HTMLElement) []string {
+	imagesMap := make(map[string]struct{}) // Map to track unique images
+	// Iterate over all <img> elements to find the product images
+	e.ForEach("img", func(_ int, el *colly.HTMLElement) {
+		// Get the URL of the image
+		imgSrc := el.Attr("src")
+		if strings.Contains(imgSrc, "https://media.rivian.com") {
+			// replace q_1 (low res) with q_auto (high res)
+			highResImage := strings.ReplaceAll(imgSrc, "q_1", "q_auto")
+
+			// Check if the image is already in the map
+			if _, exists := imagesMap[highResImage]; !exists {
+				// If not, add it to the map and the images slice
+				imagesMap[highResImage] = struct{}{}
+			}
+		}
+	})
+
+	// Convert the keys of the map to a slice
+	images := make([]string, 0, len(imagesMap))
+	for img := range imagesMap {
+		images = append(images, img)
+	}
+	return images
+}
+
 // storeProduct stores a new product entry in DynamoDB
 func storeProduct(productInfo ProductInfo) error {
 	input := &dynamodb.PutItemInput{
@@ -118,6 +146,9 @@ func storeProduct(productInfo ProductInfo) error {
 			"Price": {
 				S: aws.String(productInfo.Price),
 			},
+			"Images": {
+				SS: aws.StringSlice(productInfo.Images),
+			},
 			"GearShopUrl": {
 				S: aws.String(productInfo.URL),
 			},
@@ -125,6 +156,10 @@ func storeProduct(productInfo ProductInfo) error {
 				S: aws.String(time.Now().Format(time.RFC3339)), // Current date in ISO 8601 format
 			},
 		},
+	}
+
+	if os.Getenv("ENVIRONMENT") == "local" {
+		log.Printf("Found product: %s", productInfo)
 	}
 
 	_, err := db.PutItem(input)
@@ -157,11 +192,12 @@ func Handler(ctx context.Context) (Response, error) {
 
 		// loaded dynamically - not available with colly framework (need headless browser)
 		// price := e.ChildText("p.rivian-css-kxv3q2")
-		price := extractPrice(e) // Get the product price
-		sku := extractSku(e)     // Get the product price
+		price := extractPrice(e)   // Get the product price
+		sku := extractSku(e)       // Get the product price
+		images := extractImages(e) // Get the product image
 
 		if id != "" && name != "" && url != "" && price != "" {
-			productInfo := ProductInfo{Id: id, Name: name, SKU: sku, Price: price, URL: url}
+			productInfo := ProductInfo{Id: id, Name: name, SKU: sku, Price: price, URL: url, Images: images}
 			allProducts = append(allProducts, productInfo)
 
 			// store product in dynamodb if not index already

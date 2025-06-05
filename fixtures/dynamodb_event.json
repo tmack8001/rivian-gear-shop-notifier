@@ -22,6 +22,12 @@
                     "Price": {
                         "S": "$45.00"
                     },
+                    "Images": {
+                        "SS": [
+                            "https://media.rivian.com/rivian-main/image/upload/f_auto,q_auto/v1/rivian-com/gearshop/Gear%20Guard%20Halloween%20plush/Gear-Guard-Halloween-Plush-Grid-Landscape-01",
+                            "https://media.rivian.com/rivian-main/image/upload/f_auto,q_auto/v1/rivian-com/gearshop/Gear%20Guard%20Halloween%20plush/Gear-Guard-Halloween-Plush-Hover-Landscape-01"
+                        ]
+                    },
                     "GearShopUrl": {
                         "S": "/p/gear-guard-halloween-plush"
                     }

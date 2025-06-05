@@ -123,7 +123,7 @@ func EmailTemplate(productName, productLink string, productImages []string, year
 		</div>
 	</body>
 	</html>
-	`, productName, productLink, imagesHTML.String(), 2024, referralCode, referralCode)
+	`, productName, productLink, imagesHTML.String(), 2025, referralCode, referralCode)
 }
 
 // Handler function for AWS Lambda
@@ -139,7 +139,7 @@ func Handler(ctx context.Context, event events.DynamoDBEvent) (Response, error) 
 			name := record.Change.NewImage["Name"].String()
 			price := record.Change.NewImage["Price"].String()
 			url := record.Change.NewImage["GearShopUrl"].String()
-			var productImages []string
+			productImages := record.Change.NewImage["Images"].StringSet()
 
 			if id == "" && name == "" && url == "" {
 				fmt.Printf("failed to parse record change event : %v", record.Change.NewImage)
@@ -165,7 +165,7 @@ func Handler(ctx context.Context, event events.DynamoDBEvent) (Response, error) 
 			bccAddresses := strings.Split(os.Getenv("BCC_ADDRESSES"), ",")
 			referralCode := os.Getenv("REFERRAL_CODE")
 
-			emailBody := EmailTemplate(name, fmt.Sprintf("%s%s", GEAR_SHOP_HOSTNAME, url), productImages, 2024, referralCode)
+			emailBody := EmailTemplate(name, fmt.Sprintf("%s%s", GEAR_SHOP_HOSTNAME, url), productImages, 2025, referralCode)
 
 			sendEmailInput := &ses.SendEmailInput{
 				Source:           aws.String(sourceEmail),

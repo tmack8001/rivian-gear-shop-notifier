@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SRC_DIR="src"
+SRC_DIR="src/$1"
 export ENVIRONMENT="local"
 export DYNAMODB_TABLE_NAME="GearShopInventoryTable"
 
